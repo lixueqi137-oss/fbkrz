@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>崩溃-恢复日志 | 创业者的情绪管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --accent-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --warning-color: #f8961e;
+            --danger-color: #f94144;
+            --gray-color: #adb5bd;
+            --border-radius: 10px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7ff;
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        
+        @media (min-width: 992px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .full-width {
+                grid-column: 1 / -1;
+            }
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        h2 {
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h2 i {
+            color: var(--primary-color);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--gray-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #2d9cdb;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .severity-level {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .severity-btn {
+            flex: 1;
+            padding: 10px;
+            background-color: #e9ecef;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .severity-btn:hover {
+            background-color: #dee2e6;
+        }
+        
+        .severity-btn.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.1);
+            font-weight: 600;
+        }
+        
+        .severity-1 { color: #4caf50; }
+        .severity-2 { color: #8bc34a; }
+        .severity-3 { color: #ffc107; }
+        .severity-4 { color: #ff9800; }
+        .severity-5 { color: #f44336; }
+        
+        .log-entry {
+            border-bottom: 1px solid #eee;
+            padding: 20px 0;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-date {
+            font-size: 0.9rem;
+            color: var(--gray-color);
+            margin-bottom: 5px;
+        }
+        
+        .log-trigger {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .log-pattern {
+            display: inline-block;
+            background-color: #e9ecef;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            color: var(--dark-color);
+        }
+        
+        .log-body-signal {
+            display: inline-block;
+            margin-right: 10px;
+            margin-top: 10px;
+            padding: 4px 10px;
+            background-color: #fff5f5;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--danger-color);
+        }
+        
+        .log-breakthrough {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f9ff;
+            border-radius: 8px;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--gray-color);
+            margin-top: 5px;
+        }
+        
+        .pattern-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            background-color: #eef2ff;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+        
+        .pattern-tag .count {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            text-align: center;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray-color);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #dee2e6;
+        }
+        
+        .insight-box {
+            background: linear-gradient(135deg, #f0f4ff, #eef2ff);
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--gray-color);
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .export-import {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .mood-emoji {
+            font-size: 1.5rem;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-brain"></i> 崩溃-恢复日志</h1>
+        <p class="subtitle">创业者的情绪管理系统 | 收集你的崩溃数据，建立防崩溃协议，将反复变成你的成长地图</p>
+    </header>
+    
+    <div class="container">
+        <!-- 记录新日志 -->
+        <div class="card">
+            <h2><i class="fas fa-pen-alt"></i> 记录新日志</h2>
+            <form id="logForm">
+                <div class="form-group">
+                    <label for="trigger">1. 触发点</label>
+                    <input type="text" id="trigger" placeholder="是什么触发了这次崩溃/压力？例如：看到长长任务清单、某个任务卡壳、负面反馈..." required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reaction">2. 我的反应</label>
+                    <textarea id="reaction" placeholder="我做出了什么反应？例如：刷手机逃避、疯狂空想、自我批判、暴饮暴食..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>3. 身体信号（可多选）</label>
+                    <div>
+                        <label><input type="checkbox" class="body-signal" value="头痛"> 头痛</label>
+                        <label><input type="checkbox" class="body-signal" value="胃痛"> 胃痛</label>
+                        <label><input type="checkbox" class="body-signal" value="胸闷"> 胸闷</label>
+                        <label><input type="checkbox" class="body-signal" value="头晕"> 头晕</label>
+                        <label><input type="checkbox" class="body-signal" value="肌肉紧张"> 肌肉紧张</label>
+                        <label><input type="checkbox" class="body-signal" value="失眠"> 失眠</label>
+                        <label><input type="checkbox" class="body-signal" value="疲惫"> 疲惫</label>
+                        <input type="text" id="otherBodySignal" placeholder="其他..." style="margin-top: 10px; width: 100%;">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>4. 崩溃严重程度</label>
+                    <div class="severity-level">
+                        <div class="severity-btn severity-1" data-level="1">1<br>轻微</div>
+                        <div class="severity-btn severity-2" data-level="2">2<br>中度</div>
+                        <div class="severity-btn severity-3" data-level="3">3<br>严重</div>
+                        <div class="severity-btn severity-4" data-level="4">4<br>很严重</div>
+                        <div class="severity-btn severity-5" data-level="5">5<br>极度严重</div>
+                    </div>
+                    <input type="hidden" id="severity" value="3" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="breakthrough">5. 一个微小突破</label>
+                    <textarea id="breakthrough" placeholder="我是怎么暂时走出来的？（哪怕只是去喝了杯水、给朋友发了消息、深呼吸了5次）" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pattern">6. 模式命名</label>
+                    <input type="text" id="pattern" placeholder="给这次崩溃起个名，如：全能者幻觉发作、未来恐惧症3.0、完美主义陷阱..." required>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn"><i class="fas fa-save"></i> 保存日志</button>
+                    <button type="button" id="resetBtn" class="btn btn-danger"><i class="fas fa-redo"></i> 重置</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 查看日志 -->
+        <div class="card">
+            <h2><i class="fas fa-history"></i> 历史日志</h2>
+            <div id="logList"></div>
+            <div id="emptyLogs" class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <p>还没有日志记录<br>开始记录你的第一次崩溃-恢复经历</p>
+            </div>
+        </div>
+        
+        <!-- 统计与洞察 -->
+        <div class="card full-width">
+            <h2><i class="fas fa-chart-line"></i> 数据洞察</h2>
+            <div id="statsContainer" class="stats-container">
+                <!-- 统计数据会通过JS动态生成 -->
+            </div>
+            
+            <div id="patternInsights" class="insight-box">
+                <h3><i class="fas fa-lightbulb"></i> 模式识别</h3>
+                <p id="commonPatterns">记录更多日志后，这里会显示你的常见崩溃模式</p>
+                <div id="patternTags"></div>
+            </div>
+            
+            <div class="export-import">
+                <h3><i class="fas fa-file-export"></i> 数据管理</h3>
+                <p>你的所有数据都保存在本地浏览器中。你可以导出备份或导入之前的数据。</p>
+                <div class="btn-group">
+                    <button id="exportBtn" class="btn btn-success"><i class="fas fa-download"></i> 导出数据</button>
+                    <button id="importBtn" class="btn"><i class="fas fa-upload"></i> 导入数据</button>
+                    <button id="clearBtn" class="btn btn-danger"><i class="fas fa-trash-alt"></i> 清除所有数据</button>
+                </div>
+                <input type="file" id="importFile" accept=".json" class="hidden">
+            </div>
+        </div>
+        
+        <!-- 防崩溃协议生成器 -->
+        <div class="card full-width">
+            <h2><i class="fas fa-shield-alt"></i> 防崩溃协议生成器</h2>
+            <p>根据你的日志记录，为你常见的崩溃场景生成"傻瓜式行动剧本"。</p>
+            
+            <div class="form-group">
+                <label for="protocolScenario">选择你的崩溃场景：</label>
+                <select id="protocolScenario">
+                    <option value="taskOverload">看到任务清单就瘫痪（未来恐惧症）</option>
+                    <option value="loneliness">独自做事感到孤独和怀疑（创业者孤独症）</option>
+                    <option value="perfectionism">觉得"所有事都得自己做"（全能者牢笼）</option>
+                    <option value="procrastination">严重拖延，明知重要但无法开始</option>
+                    <option value="burnout">精疲力尽，对一切失去兴趣</option>
+                </select>
+            </div>
+            
+            <button id="generateProtocol" class="btn"><i class="fas fa-magic"></i> 生成防崩溃协议</button>
+            
+            <div id="protocolOutput" class="insight-box" style="margin-top: 20px; display: none;">
+                <h3>你的防崩溃协议</h3>
+                <div id="protocolContent"></div>
+                <button id="saveProtocol" class="btn" style="margin-top: 15px;"><i class="fas fa-bookmark"></i> 保存到我的协议库</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>《崩溃-恢复日志》—— 你的创业情绪管理系统 | 数据仅保存在本地浏览器，保护你的隐私</p>
+        <p>记住：你不是在记录失败，而是在收集"系统调试数据"</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化应用
+            initApp();
+            
+            // 设置严重程度选择按钮
+            setupSeverityButtons();
+            
+            // 设置表单提交
+            setupFormSubmit();
+            
+            // 设置其他按钮事件
+            setupButtons();
+            
+            // 加载并显示日志
+            loadAndDisplayLogs();
+            
+            // 生成统计数据
+            generateStats();
+        });
+        
+        // 应用初始化
+        function initApp() {
+            // 检查是否已有数据，如果没有则初始化
+            if (!localStorage.getItem('crashLogs')) {
+                localStorage.setItem('crashLogs', JSON.stringify([]));
+                localStorage.setItem('protocols', JSON.stringify([]));
+            }
+        }
+        
+        // 设置严重程度选择按钮
+        function setupSeverityButtons() {
+            const buttons = document.querySelectorAll('.severity-btn');
+            const severityInput = document.getElementById('severity');
+            
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 移除所有按钮的选中状态
+                    buttons.forEach(b => b.classList.remove('selected'));
+                    
+                    // 给当前按钮添加选中状态
+                    this.classList.add('selected');
+                    
+                    // 更新隐藏输入框的值
+                    severityInput.value = this.getAttribute('data-level');
+                });
+            });
+            
+            // 默认选中级别3
+            document.querySelector('.severity-btn[data-level="3"]').classList.add('selected');
+        }
+        
+        // 设置表单提交
+        function setupFormSubmit() {
+            const form = document.getElementById('logForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 收集表单数据
+                const trigger = document.getElementById('trigger').value;
+                const reaction = document.getElementById('reaction').value;
+                const severity = document.getElementById('severity').value;
+                const breakthrough = document.getElementById('breakthrough').value;
+                const pattern = document.getElementById('pattern').value;
+                
+                // 收集身体信号
+                const bodySignals = [];
+                document.querySelectorAll('.body-signal:checked').forEach(cb => {
+                    bodySignals.push(cb.value);
+                });
+                
+                // 添加其他身体信号
+                const otherSignal = document.getElementById('otherBodySignal').value;
+                if (otherSignal.trim()) {
+                    bodySignals.push(otherSignal.trim());
+                }
+                
+                // 创建日志对象
+                const logEntry = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString('zh-CN'),
+                    trigger: trigger,
+                    reaction: reaction,
+                    bodySignals: bodySignals,
+                    severity: parseInt(severity),
+                    breakthrough: breakthrough,
+                    pattern: pattern
+                };
+                
+                // 保存到本地存储
+                saveLogEntry(logEntry);
+                
+                // 重置表单
+                form.reset();
+                document.getElementById('otherBodySignal').value = '';
+                
+                // 重新选中默认严重程度
+                document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('selected'));
+                document.querySelector('.severity-btn[data-level="3"]').classList.add('selected');
+                document.getElementById('severity').value = '3';
+                
+                // 重新加载和显示日志
+                loadAndDisplayLogs();
+                
+                // 重新生成统计数据
+                generateStats();
+                
+                // 显示成功消息
+                alert('日志已保存！你正在收集宝贵的系统调试数据。');
+            });
+        }
+        
+        // 保存日志条目
+        function saveLogEntry(logEntry) {
+            const logs = JSON.parse(localStorage.getItem('crashLogs'));
+            logs.unshift(logEntry); // 添加到开头
+            localStorage.setItem('crashLogs', JSON.stringify(logs));
+        }
+        
+        // 加载并显示日志
+        function loadAndDisplayLogs() {
+            const logs = JSON.parse(localStorage.getItem('crashLogs'));
+            const logList = document.getElementById('logList');
+            const emptyLogs = document.getElementById('emptyLogs');
+            
+            // 清空当前列表
+            logList.innerHTML = '';
+            
+            if (logs.length === 0) {
+                emptyLogs.classList.remove('hidden');
+                return;
+            }
+            
+            emptyLogs.classList.add('hidden');
+            
+            // 显示日志条目
+            logs.forEach(log => {
+                const logElement = document.createElement('div');
+                logElement.className = 'log-entry';
+                
+                // 根据严重程度选择表情符号
+                const severityEmoji = getSeverityEmoji(log.severity);
+                
+                logElement.innerHTML = `
+                    <div class="log-date">${log.date} <span class="mood-emoji">${severityEmoji}</span> 严重程度: ${log.severity}/5</div>
+                    <div class="log-trigger">触发点: ${log.trigger}</div>
+                    <div><strong>反应:</strong> ${log.reaction}</div>
+                    ${log.bodySignals.length > 0 ? `<div><strong>身体信号:</strong> ${log.bodySignals.map(signal => `<span class="log-body-signal">${signal}</span>`).join('')}</div>` : ''}
+                    <div class="log-breakthrough"><strong>微小突破:</strong> ${log.breakthrough}</div>
+                    <div class="log-pattern">模式: ${log.pattern}</div>
+                    <button class="btn" onclick="deleteLog(${log.id})" style="margin-top: 10px; padding: 5px 10px; font-size: 0.9rem;"><i class="fas fa-trash"></i> 删除</button>
+                `;
+                
+                logList.appendChild(logElement);
+            });
+        }
+        
+        // 根据严重程度获取表情符号
+        function getSeverityEmoji(severity) {
+            switch(parseInt(severity)) {
+                case 1: return '😊';
+                case 2: return '😐';
+                case 3: return '😟';
+                case 4: return '😨';
+                case 5: return '😵';
+                default: return '😐';
+            }
+        }
+        
+        // 删除日志
+        function deleteLog(id) {
+            if (!confirm('确定要删除这条日志吗？')) return;
+            
+            const logs = JSON.parse(localStorage.getItem('crashLogs'));
+            const filteredLogs = logs.filter(log => log.id !== id);
+            localStorage.setItem('crashLogs', JSON.stringify(filteredLogs));
+            
+            loadAndDisplayLogs();
+            generateStats();
+        }
+        
+        // 生成统计数据
+        function generateStats() {
+            const logs = JSON.parse(localStorage.getItem('crashLogs'));
+            const statsContainer = document.getElementById('statsContainer');
+            const commonPatterns = document.getElementById('commonPatterns');
+            const patternTags = document.getElementById('patternTags');
+            
+            if (logs.length === 0) {
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">总记录数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">平均严重程度</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">识别模式</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0天</div>
+                        <div class="stat-label">恢复时间缩短中</div>
+                    </div>
+                `;
+                
+                commonPatterns.textContent = '记录更多日志后，这里会显示你的常见崩溃模式';
+                patternTags.innerHTML = '';
+                return;
+            }
+            
+            // 计算统计数据
+            const totalLogs = logs.length;
+            
+            // 平均严重程度
+            const avgSeverity = (logs.reduce((sum, log) => sum + log.severity, 0) / totalLogs).toFixed(1);
+            
+            // 识别模式数量
+            const patterns = [...new Set(logs.map(log => log.pattern))];
+            const patternCount = patterns.length;
+            
+            // 最常见的身体信号
+            const bodySignalCount = {};
+            logs.forEach(log => {
+                log.bodySignals.forEach(signal => {
+                    bodySignalCount[signal] = (bodySignalCount[signal] || 0) + 1;
+                });
+            });
+            
+            // 最常见的触发点
+            const triggerCount = {};
+            logs.forEach(log => {
+                const trigger = log.trigger.toLowerCase();
+                triggerCount[trigger] = (triggerCount[trigger] || 0) + 1;
+            });
+            
+            // 最常见的模式
+            const patternFrequency = {};
+            logs.forEach(log => {
+                patternFrequency[log.pattern] = (patternFrequency[log.pattern] || 0) + 1;
+            });
+            
+            // 显示统计数据
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${totalLogs}</div>
+                    <div class="stat-label">总记录数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgSeverity}/5</div>
+                    <div class="stat-label">平均严重程度</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${patternCount}</div>
+                    <div class="stat-label">识别模式</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${logs.length >= 2 ? '✓' : '...'}</div>
+                    <div class="stat-label">系统调试中</div>
+                </div>
+            `;
+            
+            // 显示模式识别
+            if (patterns.length > 0) {
+                const topPatterns = Object.entries(patternFrequency)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+                
+                if (topPatterns.length > 0) {
+                    commonPatterns.textContent = `你的最常见崩溃模式是："${topPatterns[0][0]}"（出现了${topPatterns[0][1]}次）`;
+                    
+                    // 显示模式标签
+                    patternTags.innerHTML = '';
+                    topPatterns.forEach(([pattern, count]) => {
+                        const tag = document.createElement('span');
+                        tag.className = 'pattern-tag';
+                        tag.innerHTML = `${pattern} <span class="count">${count}</span>`;
+                        patternTags.appendChild(tag);
+                    });
+                }
+            }
+        }
+        
+        // 设置按钮事件
+        function setupButtons() {
+            // 重置按钮
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                document.getElementById('logForm').reset();
+                document.getElementById('otherBodySignal').value = '';
+                document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('selected'));
+                document.querySelector('.severity-btn[data-level="3"]').classList.add('selected');
+                document.getElementById('severity').value = '3';
+            });
+            
+            // 导出数据按钮
+            document.getElementById('exportBtn').addEventListener('click', function() {
+                const logs = JSON.parse(localStorage.getItem('crashLogs'));
+                const protocols = JSON.parse(localStorage.getItem('protocols'));
+                const data = {
+                    crashLogs: logs,
+                    protocols: protocols,
+                    exportDate: new Date().toISOString()
+                };
+                
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `崩溃恢复日志_备份_${new Date().toISOString().slice(0,10)}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            });
+            
+            // 导入数据按钮
+            document.getElementById('importBtn').addEventListener('click', function() {
+                document.getElementById('importFile').click();
+            });
+            
+            document.getElementById('importFile').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (confirm('导入数据将覆盖当前所有日志，确定要继续吗？')) {
+                            if (data.crashLogs) {
+                                localStorage.setItem('crashLogs', JSON.stringify(data.crashLogs));
+                            }
+                            if (data.protocols) {
+                                localStorage.setItem('protocols', JSON.stringify(data.protocols));
+                            }
+                            
+                            loadAndDisplayLogs();
+                            generateStats();
+                            alert('数据导入成功！');
+                        }
+                    } catch (error) {
+                        alert('导入失败：文件格式不正确');
+                    }
+                    
+                    // 重置文件输入
+                    document.getElementById('importFile').value = '';
+                };
+                reader.readAsText(file);
+            });
+            
+            // 清除所有数据按钮
+            document.getElementById('clearBtn').addEventListener('click', function() {
+                if (confirm('确定要清除所有数据吗？此操作不可撤销！')) {
+                    localStorage.setItem('crashLogs', JSON.stringify([]));
+                    localStorage.setItem('protocols', JSON.stringify([]));
+                    loadAndDisplayLogs();
+                    generateStats();
+                    alert('所有数据已清除');
+                }
+            });
+            
+            // 生成防崩溃协议按钮
+            document.getElementById('generateProtocol').addEventListener('click', function() {
+                const scenario = document.getElementById('protocolScenario').value;
+                const protocolOutput = document.getElementById('protocolOutput');
+                const protocolContent = document.getElementById('protocolContent');
+                
+                let protocol = '';
+                
+                switch(scenario) {
+                    case 'taskOverload':
+                        protocol = `
+                            <h4>场景：看到任务清单就瘫痪（未来恐惧症）</h4>
+                            <p><strong>傻瓜式行动剧本：</strong></p>
+                            <ol>
+                                <li><strong>立刻合上电脑/手机</strong>，切断信息输入</li>
+                                <li>拿出便签纸或一张白纸，<strong>只写下一件未来24小时内要做的事</strong>（不是"剪辑视频"，而是"把昨天拍的3段素材导入剪辑软件，重命名"）</li>
+                                <li>把便签贴在电脑边上，其他所有任务清单锁进抽屉或关闭相关应用</li>
+                                <li>告诉自己：<strong>"我只需要完成便签上的这一件事"</strong></li>
+                                <li>做完便签上的事，奖励自己休息10分钟，然后才能考虑打开抽屉</li>
+                            </ol>
+                            <p><strong>原理：</strong>未来恐惧症的核心是"所有未来任务同时压在当下"。这个协议通过物理隔离（便签/抽屉）和极度简化（只做一件事）来重建控制感。</p>
+                        `;
+                        break;
+                        
+                    case 'loneliness':
+                        protocol = `
+                            <h4>场景：独自做事感到孤独和怀疑（创业者孤独症）</h4>
+                            <p><strong>傻瓜式行动剧本：</strong></p>
+                            <ol>
+                                <li>立刻打开微信/通讯录，<strong>给你认为最可能理解你的2个人发同一句话</strong>："我正在进行XX项目，现在卡在YY环节，如果你有空，想听听你直觉上的建议，不需要深入。"</li>
+                                <li><strong>不做深度讨论，只要外部视角的刺激</strong></li>
+                                <li>如果没人回复，去相关的在线社区（知乎、行业论坛等）发一个简短的帖子，描述你的卡点</li>
+                                <li>设置25分钟计时器，在这期间<strong>只收集外部反馈，不要求解决方案</strong></li>
+                                <li>25分钟后，无论收到多少回复，整理你得到的反馈，写下3个关键词</li>
+                            </ol>
+                            <p><strong>原理：</strong>创业者孤独症的核心是"脑海中的回音壁效应"。这个协议通过强制引入外部视角来打破思维闭环，即使没有实质性建议，交流行为本身就能缓解孤独感。</p>
+                        `;
+                        break;
+                        
+                    case 'perfectionism':
+                        protocol = `
+                            <h4>场景：觉得"所有事都得自己做"（全能者牢笼）</h4>
+                            <p><strong>傻瓜式行动剧本：</strong></p>
+                            <ol>
+                                <li>立刻上淘宝/闲鱼/freelance平台，搜索你可能外包的任务关键词（如"短视频剪辑"、"PPT美化"、"公众号排版"）</li>
+                                <li><strong>不看价格，只看作品和评价</strong>，浏览至少5个服务商</li>
+                                <li>选择其中一个，将其加入收藏夹或购物车（不一定要购买）</li>
+                                <li>对自己说：<strong>"看，这个世界充满了可以帮我的人，我只是还没学会下订单。"</strong></li>
+                                <li>计算你当前时薪 vs 外包成本，如果外包更划算，允许自己至少外包一件小事</li>
+                            </ol>
+                            <p><strong>原理：</strong>全能者牢笼的核心是"自我重要性幻觉"。这个协议用真实的市场选项轰击幻觉，通过具体比价行为让"外包"从抽象概念变成可执行选项。</p>
+                        `;
+                        break;
+                        
+                    case 'procrastination':
+                        protocol = `
+                            <h4>场景：严重拖延，明知重要但无法开始</h4>
+                            <p><strong>傻瓜式行动剧本：</strong></p>
+                            <ol>
+                                <li>设置5分钟倒计时，告诉自己<strong>"我只做5分钟，5分钟后可以放弃"</strong></li>
+                                <li>在这5分钟内，做任务中最微不足道的一部分（如打开文档、创建文件夹）</li>
+                                <li>5分钟后，如果还想放弃，就真正放弃，但必须休息10分钟</li>
+                                <li>10分钟后，再设置5分钟倒计时，重复上述过程</li>
+                                <li>记录你每次5分钟内实际完成的内容，无论多微小</li>
+                            </ol>
+                            <p><strong>原理：</strong>严重拖延的核心是"任务在想象中的巨大痛苦"。这个协议通过极短时间承诺降低启动阻力，利用"5分钟规则"绕过心理抵抗，让行动本身打破拖延循环。</p>
+                        `;
+                        break;
+                        
+                    case 'burnout':
+                        protocol = `
+                            <h4>场景：精疲力尽，对一切失去兴趣</h4>
+                            <p><strong>傻瓜式行动剧本：</strong></p>
+                            <ol>
+                                <li><strong>立即停止所有"应该做"的事情</strong>，给自己完全许可休息</li>
+                                <li>进行一项完全不需要思考的体力活动（如散步、整理书架、洗碗）</li>
+                                <li>设定"无罪恶感休息时间"：接下来的2小时内，不允许任何与工作相关的思考</li>
+                                <li>如果无法停止思考，准备一张纸，把脑中所有想法写下来，然后物理上放到另一个房间</li>
+                                <li>进行一项童年时期喜欢的简单活动（如涂鸦、拼图、听老歌）</li>
+                            </ol>
+                            <p><strong>原理：</strong> burnout的核心是"意义感透支"。这个协议通过强制无生产力活动和回归童年简单快乐，让大脑从"意义追寻"模式切换到"存在"模式，为意义感电池充电。</p>
+                        `;
+                        break;
+                }
+                
+                protocolContent.innerHTML = protocol;
+                protocolOutput.style.display = 'block';
+            });
+            
+            // 保存协议按钮
+            document.getElementById('saveProtocol').addEventListener('click', function() {
+                const scenarioElement = document.getElementById('protocolScenario');
+                const scenarioText = scenarioElement.options[scenarioElement.selectedIndex].text;
+                const protocolContent = document.getElementById('protocolContent').innerHTML;
+                
+                const protocols = JSON.parse(localStorage.getItem('protocols'));
+                const newProtocol = {
+                    id: Date.now(),
+                    scenario: scenarioText,
+                    content: protocolContent,
+                    date: new Date().toLocaleString('zh-CN')
+                };
+                
+                protocols.push(newProtocol);
+                localStorage.setItem('protocols', JSON.stringify(protocols));
+                
+                alert('协议已保存到你的协议库！你可以在需要时查看这些协议。');
+            });
+        }
+    </script>
+</body>
+</html>
